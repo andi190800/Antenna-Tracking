@@ -1,0 +1,81 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <stdlib.h>
+#include <Servo.h>
+LiquidCrystal_I2C lcd(0x27,16,2);
+Servo pan,tilt;
+String datain="";
+float azim,azimSrv,elev,elevSrv,lat=0,lon=0,alt=0,x,y,x1,y1,z,alt2,
+
+      //Servo Calibration:
+      tiltMin=50,
+      tiltMax=180,
+      panMin=5,
+      panMax=165;
+
+int SerialError=0;
+
+void setup() 
+{
+  lcd.init();
+  lcd.backlight();
+  lcd.begin(16, 2);
+  lcd.clear();
+  Serial.begin(57600);
+  //pan.attach(9);
+  //tilt.attach(11);
+  pan.attach(8);
+  tilt.attach(9);
+  lcd.setCursor(0,0);
+  lcd.print(">TUGAS AKHIR<");
+  lcd.setCursor(0,1);
+  lcd.print(" ANDI PRASETYO ");
+  delay(1000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("<<=== SOUTH");
+  lcd.setCursor(0,1);
+  lcd.print("      NORTH===>>");
+  delay(3000);
+}
+
+void loop()
+{
+  if(Serial.available())
+   {
+    datain= Serial.readStringUntil('a');
+    azimSrv= datain.toInt(); //tilt min
+    datain= Serial.readStringUntil('b');
+    elevSrv= datain.toInt(); //tilt max
+    SerialError=0;
+    delay(10);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Azimuth  :");lcd.print(azimSrv);
+    lcd.setCursor(0,1);
+    lcd.print("Elevation:");lcd.print(elevSrv); 
+    pan.write(azimSrv);
+    tilt.write(elevSrv);
+   }
+  else if(Serial.available()==0){SerialError++;delay(1);}
+  if(SerialError==1000)
+   {
+    lcd.clear();
+    while(Serial.available()==0)
+    {
+     lcd.write(0xFE);
+     lcd.setCursor(0,0);
+     lcd.print("Waiting for data");
+     if(alt2!=0)
+     {
+       lcd.setCursor(0,1);
+       lcd.print("Last ALT: ");lcd.print(alt2);
+     }
+     //Normal Servo Position
+     tilt.write((tiltMin+tiltMax)/2);
+     pan.write((panMin+panMax)/2);                 
+    }
+    SerialError=0;lcd.clear();  
+   }
+}
